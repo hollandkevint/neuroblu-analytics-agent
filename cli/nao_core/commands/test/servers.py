@@ -311,8 +311,11 @@ class AgentClient:
         total_tokens = result.get("totalTokens", {}).get("total", 0)
         # Return the full message history including the response
         response_messages = result.get("messages", [])
-        # The full history is: original messages + response messages
-        full_history = messages + response_messages
+        # Filter out 'tool' role messages as they are not supported by convertToModelMessages
+        # Only keep 'user' and 'assistant' messages for the conversation history
+        filtered_response = [m for m in response_messages if m.get("role") in ("user", "assistant")]
+        # The full history is: original messages + filtered response messages
+        full_history = messages + filtered_response
 
         return final_text, total_tokens, full_history
 
