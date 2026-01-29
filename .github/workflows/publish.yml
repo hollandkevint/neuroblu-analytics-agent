@@ -11,14 +11,14 @@ jobs:
             fail-fast: false
             matrix:
                 include:
-                    - os: macos-latest
+                    - os: macos-15
                       platform: darwin
                       arch: arm64
-                      wheel-tag: macosx_11_0_arm64
-                    - os: macos-13
+                      wheel-tag: macosx_15_0_arm64
+                    - os: macos-15-intel
                       platform: darwin
                       arch: x64
-                      wheel-tag: macosx_10_9_x86_64
+                      wheel-tag: macosx_15_0_x86_64
                     - os: ubuntu-latest
                       platform: linux
                       arch: x64
@@ -61,6 +61,8 @@ jobs:
 
             - name: Install npm dependencies
               run: npm ci
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Update version in package files
               run: |
