@@ -49,7 +49,16 @@ class DatabricksConfig(DatabaseConfig):
         )
 
     def connect(self) -> BaseBackend:
-        """Create an Ibis Databricks connection."""
+        """Create an Ibis Databricks connection.
+
+        Patches _post_connect to skip memtable volume creation, which requires
+        CREATE VOLUME permissions that read-only tokens don't have.
+        """
+        import ibis.backends.databricks as _db
+
+        original_post_connect = _db.Backend._post_connect
+        _db.Backend._post_connect = lambda self, **kw: None  # type: ignore[assignment]
+
         kwargs: dict = {
             "server_hostname": self.server_hostname,
             "http_path": self.http_path,
@@ -62,7 +71,10 @@ class DatabricksConfig(DatabaseConfig):
         if self.schema_name:
             kwargs["schema"] = self.schema_name
 
-        return ibis.databricks.connect(**kwargs)
+        try:
+            return ibis.databricks.connect(**kwargs)
+        finally:
+            _db.Backend._post_connect = original_post_connect
 
     def get_database_name(self) -> str:
         """Get the database name for Databricks."""

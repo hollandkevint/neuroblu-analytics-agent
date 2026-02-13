@@ -5,6 +5,7 @@ yarn.lock
 bun.lock
 cli/
 example/
+neuroblu-project/
 .pytest_cache/
 
 # Backend

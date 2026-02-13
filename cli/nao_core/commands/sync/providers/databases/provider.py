@@ -160,7 +160,25 @@ class DatabaseSyncProvider(SyncProvider):
                 except Exception as e:
                     console.print(f"[bold red]✗[/bold red] Failed to sync {db.name}: {e}")
 
+        # Merge states that share the same db_path before cleanup to avoid
+        # one database config's cleanup removing another's synced schemas.
+        merged: dict[Path, DatabaseSyncState] = {}
         for state in sync_states:
+            key = state.db_path
+            if key not in merged:
+                merged[key] = state
+            else:
+                existing = merged[key]
+                existing.synced_schemas |= state.synced_schemas
+                for schema, tables in state.synced_tables.items():
+                    if schema in existing.synced_tables:
+                        existing.synced_tables[schema] |= tables
+                    else:
+                        existing.synced_tables[schema] = tables
+                existing.schemas_synced += state.schemas_synced
+                existing.tables_synced += state.tables_synced
+
+        for state in merged.values():
             removed = cleanup_stale_paths(state, verbose=True)
             total_removed += removed
 
